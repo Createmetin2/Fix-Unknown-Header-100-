@@ -1,3 +1,39 @@
+client:
+
+Open in game.py
+
+IF HAVE PROVLEM CHECK UP
+search and remove:
+
+        if constInfo.SEQUENCE_PACKET_ENABLE:
+            net.SetPacketSequenceMode()
+
+ 
+
+Now open constinfo.py and search and remove
+
+SEQUENCE_PACKET_ENABLE = 1
+
+----------------------------------------------------------------------------------------------
+
+ 
+
+Source Client:
+
+Search 
+
+return SendSequence();
+
+change with
+
+// return disable;
+
+
+
+
+
+
+
 SERVERSIDE
 
 0.1
