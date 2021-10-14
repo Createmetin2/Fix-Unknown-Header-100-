@@ -1,4 +1,6 @@
-INTERNAL PACKET FIX
+INTERNAL PACKET FIX 
+internal flood
+
 
 1) open input.cpp 
 
@@ -58,6 +60,10 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 
 			if (iExtraPacketSize < 0)
 			{
+#ifdef ENABLE_ANTI_PACKET_FLOOD
+				sys_err("Failed to analyze header(%u) host(%s)", bHeader, inet_ntoa(lpDesc->GetAddr().sin_addr));
+				lpDesc->SetPhase(PHASE_CLOSE);
+#endif
 				return true;
 			}
 
@@ -79,7 +85,6 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 
 	return true;
 }
-
 
 
 
