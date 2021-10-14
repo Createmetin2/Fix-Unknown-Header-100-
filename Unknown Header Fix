@@ -1,3 +1,94 @@
+INTERNAL PACKET FIX
+
+1) open input.cpp 
+
+search:
+
+bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, int & r_iBytesProceed)
+..............
+............
+......
+    return true;
+}
+
+ 
+
+change with :
+
+int g_iLastPacket[2] = { -1, -1 };
+bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, int & r_iBytesProceed)
+{
+	const char * c_pData = (const char *) c_pvOrig;
+
+	int		iPacketLen;
+
+	if (!m_pPacketInfo)
+	{
+		sys_err("No packet info has been binded to");
+		return true;
+	}
+
+	for (m_iBufferLeft = iBytes; m_iBufferLeft > 0;)
+	{
+		BYTE bHeader = (BYTE) *(c_pData);
+		const char * c_pszName;
+
+		if (bHeader == 0)
+			iPacketLen = 1;
+		else if (!m_pPacketInfo->Get(bHeader, &iPacketLen, &c_pszName))
+		{
+			lpDesc->SetPhase(PHASE_CLOSE);
+			return true;
+		}
+
+		if (m_iBufferLeft < iPacketLen)
+			return true;
+
+		int originalPacketSize = iPacketLen;
+		BYTE preAnalyzeSeq = *(BYTE*)(c_pData + iPacketLen - sizeof(BYTE));
+
+		if (bHeader)
+		{
+			if (test_server && bHeader != HEADER_CG_MOVE)
+				sys_log(0, "Packet Analyze [Header %d][bufferLeft %d] ", bHeader, m_iBufferLeft);
+
+			m_pPacketInfo->Start();
+
+			int iExtraPacketSize = Analyze(lpDesc, bHeader, c_pData);
+
+			if (iExtraPacketSize < 0)
+			{
+				return true;
+			}
+
+			iPacketLen += iExtraPacketSize;
+			lpDesc->Log("%s %d", c_pszName, iPacketLen);
+			m_pPacketInfo->End();
+		}
+
+		c_pData	+= iPacketLen;
+		m_iBufferLeft -= iPacketLen;
+		r_iBytesProceed += iPacketLen;
+
+		g_iLastPacket[1] = g_iLastPacket[0];
+		g_iLastPacket[0] = bHeader;
+
+		if (GetType() != lpDesc->GetInputProcessor()->GetType())
+			return false;
+	}
+
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
 client:
 
 Open in game.py
